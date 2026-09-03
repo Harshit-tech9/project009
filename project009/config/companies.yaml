@@ -1,0 +1,52 @@
+companies:
+  meridian:
+    name: Meridian Industrial Supply LLC
+    website: https://meridianindustrialsupply.com/
+    role: Procurement Operations Lead
+    industry: Industrial equipment distribution
+    workflow_challenge: >-
+      Compare vendor quotations received as PDF, Excel, and scanned images without
+      manually re-keying pricing, lead times, commercial terms, and exceptions.
+    scenario_notice: >-
+      Public company research must use cited website facts. The procurement workflow,
+      systems, volumes, costs, and approval rules below are synthetic Phase 0 test
+      inputs and must not be presented as public claims about the real company.
+    persona:
+      fallback: "I am not sure; use your best judgement and label that as an assumption."
+      knowledge_base:
+        - topic: trigger
+          patterns: [trigger, starts, begins, purchase request, initiated]
+          answer: A purchase request above INR 200,000 in SAP Business One starts the quotation process.
+        - topic: owner
+          patterns: [owner, responsible, who handles, who performs, team, people]
+          answer: Two procurement analysts prepare the comparison and one procurement manager approves it.
+        - topic: frequency
+          patterns: [frequency, often, volume, per month, how many]
+          answer: We compare about 40 groups of vendor quotations each month, usually three to five vendors per request.
+        - topic: systems
+          patterns: [systems, tools, software, applications, sap, outlook, excel]
+          answer: Quotes arrive through Outlook and are re-keyed into Excel; the purchase request and final order live in SAP Business One.
+        - topic: process
+          patterns: [current step, current steps, process step, process steps, workflow step, workflow steps, end-to-end step, end-to-end steps, from receiving, from outlook receipt, through creating, order creation, re-keying process]
+          answer: The analyst receives quotes in Outlook, links them to the SAP Business One purchase request, re-keys nine comparison fields into Excel, normalizes commercial terms, checks arithmetic, recommends the lowest compliant landed cost, obtains manager approval, and then manually creates the final order in SAP Business One.
+        - topic: success
+          patterns: [success, outcome, good result, choose, decision]
+          answer: Success is the lowest total landed cost that meets a 14-calendar-day delivery requirement and all commercial requirements, with every extracted field traceable to its source and approved by the procurement manager.
+        - topic: approval
+          patterns: [approval, approve, sign off, human, manager, threshold]
+          answer: A procurement manager reviews every recommendation and must sign off on purchases above INR 500,000.
+        - topic: fields
+          patterns: [fields, compare, extract, information, data points]
+          answer: We compare item, quantity, unit price, freight, tax, total landed cost, lead time, payment terms, and warranty.
+        - topic: pain
+          patterns: [delay, error, problem, pain, risk, hardest, failure point, bottleneck, correction]
+          answer: Different formats cause re-keying errors; we have missed pricing discrepancies and twice paid a price different from the approved comparison.
+        - topic: economics
+          patterns: [minutes, hours, time spent, manual effort, labor, cost, baseline, roi, economics]
+          answer: One quotation group takes about 75 analyst minutes plus 15 manager-review minutes. Use INR 900 per analyst hour and INR 1,500 per manager hour as synthetic loaded-cost assumptions. About one in five groups needs another 20 analyst minutes of correction work.
+        - topic: commercial-rules
+          patterns: [landed cost, freight, tax, gst, commercial requirements, calculation, normalize]
+          answer: For this pilot, landed cost means quantity times unit price plus freight before recoverable GST. The purchase request requires delivery within 14 calendar days. Missing warranty, ambiguous freight, tax treatment, or arithmetic contradictions always require human review.
+        - topic: pilot-constraints
+          patterns: [integration, access, permission, pilot, read only, write, automation boundary]
+          answer: The Phase 0 pilot uses uploaded sample files only. It has no live Outlook or SAP credentials, must remain read-only, and may never contact a vendor, create an order, or approve a purchase.

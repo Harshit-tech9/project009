@@ -1,0 +1,14 @@
+.env
+.pytest_cache/
+.pytest-tmp/
+__pycache__/
+*.py[cod]
+.venv/
+.uv-cache/
+.uv-python/
+runs/
+sample_docs/vendor_a_quote.pdf
+sample_docs/vendor_b_quote.xlsx
+sample_docs/vendor_c_quote.png
+sample_docs/expected_results.json
+runtime/
