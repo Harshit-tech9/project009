@@ -41,15 +41,27 @@ integration, or autonomous business actions.
 
 ## Repository locations
 
-Preserve the existing names, including the current `blaislogic` spelling:
+Two separate Git repositories. Preserve the existing names, including the current
+`blaislogic` spelling:
 
 ```text
-blaiselogic-website/
-├── mockups/
-│   └── Agentic_AI_Architect_Product_Mockup.html
-├── project009/                 # completed Python agent core
-└── blaislogic_frontend/        # existing React 19 + Vite website
+project009/                      # GitHub: project009 — product monorepo
+├── architect/                   # Python agent core
+├── webapp/                      # FastAPI adapter
+├── frontend/                    # Architect React SPA (Vite)
+├── config/
+└── tests/
+
+blaislogic_frontend/             # GitHub: blaislogic_frontend — marketing site only
+├── src/pages/Home.jsx
+└── src/lib/architectAppUrl.js   # external URL to project009 app
 ```
+
+They connect only over HTTP:
+
+- Marketing CTAs open `VITE_ARCHITECT_APP_URL` (default `http://127.0.0.1:8000/agentic-ai-architect`).
+- The architect SPA never imports marketing source, and FastAPI never reads
+  `blaislogic_frontend/dist`. Override SPA location with `FRONTEND_DIST` if needed.
 
 Important Phase 0 files:
 
@@ -320,8 +332,8 @@ unchanged.
 
 ## Frontend mapping
 
-Add a dedicated route such as `/agentic-ai-architect` to
-`blaislogic_frontend`. Do not replace the existing home and insight routes.
+Own the architect UI in `project009/frontend`. Do not host assessment routes inside
+`blaislogic_frontend`. The marketing site may deep-link to the architect app URL.
 
 Suggested frontend structure:
 

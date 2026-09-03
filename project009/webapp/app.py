@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import mimetypes
+import os
 import zipfile
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -26,7 +27,8 @@ from .interactions import ActionConflict
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_ROOT = ROOT / "runtime"
-FRONTEND_DIST = ROOT.parent / "blaislogic_frontend" / "dist"
+# Architect SPA lives in this repo (project009/frontend). Override with FRONTEND_DIST if needed.
+FRONTEND_DIST = Path(os.environ.get("FRONTEND_DIST", str(ROOT / "frontend" / "dist"))).resolve()
 MAX_FILE_BYTES = 10_000_000
 TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
 

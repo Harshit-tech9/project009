@@ -71,13 +71,14 @@ pytest -q
 
 ## Run the Phase 1 web application locally
 
-Build the frontend, then start the local-only API and SPA server:
+The architect UI lives in this repository under `frontend/` (not in
+`blaislogic_frontend`). The marketing site links out to this app over HTTP only.
 
 ```powershell
-cd ..\blaislogic_frontend
+cd frontend
 npm ci
 npm run build
-cd ..\project009
+cd ..
 uvicorn webapp.app:app --host 127.0.0.1 --port 8000
 ```
 
@@ -85,10 +86,26 @@ Open `http://127.0.0.1:8000/agentic-ai-architect`. The unauthenticated Phase 1
 application is intentionally local-only. Assessment state and uploads remain under
 `project009/runtime/` until manually removed.
 
+For Vite HMR during UI work, run the API and frontend separately:
+
+```powershell
+# terminal 1
+uvicorn webapp.app:app --host 127.0.0.1 --port 8000
+
+# terminal 2
+cd frontend
+npm run dev
+```
+
+Then open `http://127.0.0.1:5174/agentic-ai-architect` (Vite proxies `/api` to port 8000).
+
+Optional: set `FRONTEND_DIST` to override the built SPA path served by FastAPI.
+Optional: set `VITE_MARKETING_SITE_URL` in `frontend/.env` for the brand home link.
+
 The test suite mocks Agent37 completely. It must never provision an instance.
 
-## Phase 0 boundary
+## Phase 0 / Phase 1 boundary
 
-There is no web server, authentication, customer upload flow, report delivery,
-email, booking, or React integration in this package. The async interaction and
-event interfaces are the seams for those later additions.
+Phase 0 remains the CLI-only core under `architect/`. Phase 1 adds `webapp/` and
+`frontend/` in this same product repository. There is still no production auth,
+report delivery, email, booking, or live Outlook/SAP integration.
