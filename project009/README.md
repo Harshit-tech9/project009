@@ -1,16 +1,69 @@
-# Project009 - Agentic AI Architect Phase 0
+# Project009 — Agentic AI Architect
 
-An internal, CLI-only prototype of the BlaiseLogic Agentic AI Architect. It runs one
-Agent37/Hermes session through company research, a six-question workflow interview,
-opportunity ranking, blueprint generation, and a vendor-quotation proof of work.
+BlaiseLogic's **Agentic AI Architect**: an assessment product that runs one Agent37/Hermes session through company research, a guided workflow interview, opportunity ranking, blueprint generation, and a vendor-quotation proof of work.
 
-The approved design is at
-[`../../docs/superpowers/specs/2026-09-02-project009-phase0-prototype-design.md`](../../docs/superpowers/specs/2026-09-02-project009-phase0-prototype-design.md).
-The future frontend boundary is documented in [`integration.md`](integration.md).
+Phase 0 is the validated CLI core. Phase 1 adds a local FastAPI API and React SPA around that same core. See [`integration.md`](integration.md) for API contracts and Phase 1 handoff detail.
+
+## What it does
+
+A single assessment walks through seven product stages:
+
+```text
+start -> research -> interview -> opportunities -> blueprint -> proof -> results
+```
+
+| Stage | Outcome |
+|--------|---------|
+| **Research** | Cited public company facts, assumptions, and human confirmation |
+| **Interview** | Up to six adaptive workflow questions with an economic baseline |
+| **Opportunities** | Exactly three ranked opportunities; one is selected |
+| **Blueprint** | Business, agent, technical, economic, and pilot sections |
+| **Proof** | PDF / XLSX / PNG quotation comparison with locators and review flags |
+| **Results** | Combined assessment, risks, usage, and pilot roadmap |
+
+Each run provisions one pinned Hermes instance, reuses one session, persists local artifacts, and deletes the instance before the terminal event on success, failure, or cancellation.
+
+## Stack
+
+| Layer | Technology |
+|--------|------------|
+| Agent core | Python 3.12, Pydantic, httpx, Agent37/Hermes |
+| API | FastAPI, uvicorn, aiosqlite, SSE |
+| UI | React 19, Vite 8, React Router |
+| Tests | pytest (API/core), Vitest + Testing Library (UI) |
+
+## Layout
+
+```text
+.
+├── architect/            # assessment pipeline, stages, Agent37 client
+│   └── stages/           # research, interview, opportunities, blueprint, proof
+├── webapp/               # FastAPI adapter, coordinator, SQLite, uploads
+├── frontend/             # Architect React SPA
+├── config/companies.yaml # Phase 0 company + synthetic persona (e.g. Meridian)
+├── sample_docs/          # generators for PDF / XLSX / PNG proof samples
+├── tests/                # mocked Agent37 suite (no paid calls)
+├── run_assessment.py     # CLI entry point
+└── integration.md        # Phase 1 handoff and API contract detail
+```
+
+| Path | Role |
+|------|------|
+| `architect/` | Pipeline, contracts, Agent37 client, stage modules |
+| `webapp/` | FastAPI routes, coordinator, SQLite, uploads |
+| `frontend/` | React SPA at `/agentic-ai-architect` |
+| `config/companies.yaml` | Company configs and synthetic interview persona |
+| `run_assessment.py` | CLI composition root |
+
+A separate marketing site (`blaislogic_frontend`) may deep-link here over HTTP only. This app never embeds marketing source, and the browser never talks to Agent37 directly.
+
+## Prerequisites
+
+- Python **3.12** (see `.python-version`)
+- Node.js 20+ (for the SPA)
+- An **Agent37 API key** for live runs (not required for the automated test suite)
 
 ## Setup
-
-Python 3.12 is the target runtime (also declared in `.python-version`).
 
 ```powershell
 python -m venv .venv
@@ -19,26 +72,25 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Put the real Agent37 key in `.env` as `AGENT37_API_KEY`. Do not pass it as a CLI
-argument and do not commit `.env`. A process-level environment variable takes
-precedence over the file.
+Edit `.env` and set `AGENT37_API_KEY`. Do not pass the key as a CLI argument or commit `.env`. A process-level environment variable overrides the file.
 
-The checked-in template pin is the immutable example published in Agent37's official
-template documentation. Each assessment preflights that exact pin with
-`GET /v1/templates/{pin}` before provisioning. Replace `AGENT37_TEMPLATE` if your
-workspace should use a newer published pin.
+Optional knobs in `.env`:
 
-## Generate the sample quotations
+| Variable | Purpose |
+|----------|---------|
+| `AGENT37_API_KEY` | Backend-only Agent37 credential |
+| `AGENT37_TEMPLATE` | Pinned template (default `agent37-hermes@2026.07.02b`) |
+| `AGENT37_BUDGET_CREDIT_MICROS` | Per-instance spend headroom in USD micros |
+
+## Generate sample quotations
 
 ```powershell
 python sample_docs/generate_samples.py
 ```
 
-This creates a text PDF, a structured XLSX, and a scan-style PNG. The binaries and
-the generated ground-truth manifest are intentionally ignored by git. Project009
-uploads their exact bytes; it does not parse them.
+This creates a text PDF, a structured XLSX, and a scan-style PNG used by the CLI persona.
 
-## Run
+## CLI (Phase 0)
 
 ```powershell
 python run_assessment.py --company meridian
@@ -47,32 +99,31 @@ python run_assessment.py --company meridian --budget-credit-micros 1000000
 python run_assessment.py --company meridian --template agent37-hermes@2026.07.02b
 ```
 
-For one small, visible streaming call to an already-running Agent37 Hermes instance,
-run:
+Artifacts land in `runs/<company>-<UTC timestamp>/` (raw turns, parsed stages, redacted manifest, assessment JSON, MetricAI-shaped events). The Agent37 instance is deleted at the end of successful and failed runs.
+
+Optional smoke against an already-running Hermes instance (does not create or delete it):
 
 ```powershell
-python agent37_hermes_smoke.py https://y7084lkgt3.agent37.app
+python agent37_hermes_smoke.py https://<your-instance>.agent37.app
 ```
 
-The script sends the same payload as the Playground (`Hi Hermes`, streaming enabled,
-low reasoning effort) and prints the raw SSE events. It never prints request headers
-or the API key. The supplied instance must already be running; this script does not
-create or delete it.
+## Web app (Phase 1)
 
-Every run writes raw turns, parsed stages, a redacted manifest, the final assessment,
-and MetricAI-shaped events to `runs/<company>-<UTC timestamp>/`. The Agent37 instance
-is deleted at the end of successful and failed runs.
-
-## Validate without spending money
+### Dev with Vite HMR
 
 ```powershell
-pytest -q
+# terminal 1
+uvicorn webapp.app:app --host 127.0.0.1 --port 8000
+
+# terminal 2
+cd frontend
+npm ci
+npm run dev
 ```
 
-## Run the Phase 1 web application locally
+Open http://127.0.0.1:5174/agentic-ai-architect (Vite proxies `/api` to port 8000).
 
-The architect UI lives in this repository under `frontend/` (not in
-`blaislogic_frontend`). The marketing site links out to this app over HTTP only.
+### Production-style local serve
 
 ```powershell
 cd frontend
@@ -82,30 +133,49 @@ cd ..
 uvicorn webapp.app:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/agentic-ai-architect`. The unauthenticated Phase 1
-application is intentionally local-only. Assessment state and uploads remain under
-`project009/runtime/` until manually removed.
+Open http://127.0.0.1:8000/agentic-ai-architect.
 
-For Vite HMR during UI work, run the API and frontend separately:
+Optional: set `FRONTEND_DIST` to override the SPA path FastAPI serves. Set `VITE_MARKETING_SITE_URL` in `frontend/.env` for the brand home link (see `frontend/.env.example`).
+
+### Browser API surface
+
+| Method | Path | Role |
+|--------|------|------|
+| `POST` | `/api/assessments` | Start assessment (202) |
+| `GET` | `/api/assessments/{id}` | Browser-safe snapshot |
+| `GET` | `/api/assessments/{id}/events` | SSE progress + interactions |
+| `POST` | `/api/assessments/{id}/actions/{action_id}` | Human replies |
+| `POST` | `/api/assessments/{id}/documents` | PDF / XLSX / PNG upload |
+| `DELETE` | `/api/assessments/{id}/documents/{document_id}` | Remove upload |
+| `POST` | `/api/assessments/{id}/cancel` | Cancel + cleanup |
+
+Full lifecycle, SSE, and security rules are documented in [`integration.md`](integration.md).
+
+## Tests
+
+The suite mocks Agent37 completely and must never provision an instance or spend credits.
 
 ```powershell
-# terminal 1
-uvicorn webapp.app:app --host 127.0.0.1 --port 8000
+pytest -q
 
-# terminal 2
 cd frontend
-npm run dev
+npm test
 ```
 
-Then open `http://127.0.0.1:5174/agentic-ai-architect` (Vite proxies `/api` to port 8000).
+## Security and product boundaries
 
-Optional: set `FRONTEND_DIST` to override the built SPA path served by FastAPI.
-Optional: set `VITE_MARKETING_SITE_URL` in `frontend/.env` for the brand home link.
+- `AGENT37_API_KEY` stays on the backend only; the SPA never receives instance URLs, session IDs, or credentials.
+- Uploads are assessment-scoped, signature-checked (PDF / XLSX / PNG), size-capped (10 MB), and stored under `runtime/` — not in the Vite public tree.
+- Customer website URLs are validated against SSRF targets before use.
+- Phase 1 is **unauthenticated and local/internal**. Do not publicly deploy without auth and tenant isolation.
+- The product is advisory and read-only: no live Outlook/SAP integration, vendor contact, order creation, or autonomous approvals.
 
-The test suite mocks Agent37 completely. It must never provision an instance.
+## Current status
 
-## Phase 0 / Phase 1 boundary
+- **Phase 0** — CLI core validated (including Meridian live run evidence described in `integration.md`).
+- **Phase 1** — Local web app with SSE, durable actions, uploads, blueprint confirmation, and proof run/skip.
+- **Later** — Auth, multi-tenant production hardening, report delivery, booking, and scoped business-system integrations (see `integration.md`).
 
-Phase 0 remains the CLI-only core under `architect/`. Phase 1 adds `webapp/` and
-`frontend/` in this same product repository. There is still no production auth,
-report delivery, email, booking, or live Outlook/SAP integration.
+## License
+
+This project is licensed under the [MIT License](../LICENSE).
